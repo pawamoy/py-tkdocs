@@ -545,3 +545,8 @@ def test_load_decorated_function():
         assert child.category == "function"
         assert child.parent is child.root
         assert child.parent.name == "decorated_function"
+
+def test_load_final_annotations():
+    """Load things annotated as final."""
+    loader = Loader(new_path_syntax=True)
+    obj = loader.get_object_documentation("tests.fixtures.final")

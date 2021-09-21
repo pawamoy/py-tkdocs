@@ -5,6 +5,8 @@ It uses [`inspect`](https://docs.python.org/3/library/inspect.html) for introspe
 iterating over their members, etc.
 """
 
+from __future__ import annotations
+
 import importlib
 import inspect
 import pkgutil
