@@ -2,6 +2,7 @@
 
 import inspect
 from textwrap import dedent
+from typing import Iterator
 
 from pytkdocs.loader import Loader
 from pytkdocs.parsers.docstrings.base import Section
@@ -659,3 +660,41 @@ def test_parse_module_attributes_section():
         {"name": "E", "annotation": "float", "description": "Epsilon."},
     ]
     assert [serialize_attribute(attr) for attr in attr_section.value] == expected
+
+
+def test_docstring_with_yield_section():
+    """Parse Yields section."""
+
+    def f():
+        """A useless range wrapper.
+
+        Yields:
+            int: Integers.
+        """
+        yield from range(10)
+
+    sections, errors = parse(inspect.getdoc(f), inspect.signature(f))
+    assert len(sections) == 2
+    annotated = sections[1].value
+    assert annotated.annotation is int
+    assert annotated.description == "Integers."
+    assert not errors
+
+
+def test_docstring_with_yield_section():
+    """Parse Yields section."""
+
+    def f() -> Iterator[int]:
+        """A useless range wrapper.
+
+        Yields:
+            Integers.
+        """
+        yield from range(10)
+
+    sections, errors = parse(inspect.getdoc(f), inspect.signature(f))
+    assert len(sections) == 2
+    annotated = sections[1].value
+    assert annotated.annotation is Iterator[int]
+    assert annotated.description == "Integers."
+    assert not errors

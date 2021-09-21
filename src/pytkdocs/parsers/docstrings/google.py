@@ -17,6 +17,8 @@ SECTIONS_TITLES = {
     "exceptions:": Section.Type.EXCEPTIONS,
     "return:": Section.Type.RETURN,
     "returns:": Section.Type.RETURN,
+    "yield:": Section.Type.YIELD,
+    "yields:": Section.Type.YIELD,
     "example:": Section.Type.EXAMPLES,
     "examples:": Section.Type.EXAMPLES,
     "attribute:": Section.Type.ATTRIBUTES,
@@ -46,6 +48,7 @@ class Google(Parser):
             Section.Type.EXAMPLES: self.read_examples_section,
             Section.Type.ATTRIBUTES: self.read_attributes_section,
             Section.Type.RETURN: self.read_return_section,
+            Section.Type.YIELD: self.read_yield_section,
         }
 
     def parse_sections(self, docstring: str) -> List[Section]:  # noqa: D102
@@ -417,6 +420,43 @@ class Google(Parser):
             self.error("No return type/annotation in docstring/signature")
 
         return Section(Section.Type.RETURN, AnnotatedObject(annotation, description)), i
+
+    def read_yield_section(self, lines: List[str], start_index: int) -> Tuple[Optional[Section], int]:
+        """
+        Parse a "yields" section.
+
+        Arguments:
+            lines: The return block lines.
+            start_index: The line number to start at.
+
+        Returns:
+            A tuple containing a `Section` (or `None`) and the index at which to continue parsing.
+        """
+        text, i = self.read_block(lines, start_index)
+
+        # Early exit if there is no text in the yield section
+        if not text:
+            self.error(f"Empty yield section at line {start_index}")
+            return None, i
+
+        # First try to get the annotation and description from the docstring
+        try:
+            type_, text = text.split(":", 1)
+        except ValueError:
+            description = text
+            annotation = self.context["annotation"]
+            # If there was no annotation in the docstring then move to signature
+            if annotation is empty and self.context["signature"]:
+                annotation = self.context["signature"].return_annotation
+        else:
+            annotation = type_.lstrip()
+            description = text.lstrip()
+
+        # There was no type in the docstring and no annotation
+        if annotation is empty:
+            self.error("No yield type/annotation in docstring/signature")
+
+        return Section(Section.Type.YIELD, AnnotatedObject(annotation, description)), i
 
     def read_examples_section(self, lines: List[str], start_index: int) -> Tuple[Optional[Section], int]:
         """
